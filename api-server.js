@@ -46,17 +46,31 @@ const server = createServer(async (req, res) => {
     if (!url.pathname.startsWith('/api/')) { res.writeHead(404); res.end('Not found'); return; }
 
     const relPath = url.pathname.slice(5); // strip /api/
+    console.log(`[API Server] -> ${req.method} /api/${relPath}`);
+
+    // Parse body immediately to avoid missing events during async handler loading
+    const body = await new Promise(resolve => {
+        let d = '';
+        req.on('data', c => { d += c; });
+        req.on('end', () => {
+            try { resolve(d ? JSON.parse(d) : {}); }
+            catch { resolve({}); }
+        });
+        if (req.method === 'GET' || req.method === 'DELETE' || req.method === 'OPTIONS') {
+            // Optional: for methods without body, we can resolve faster if needed but 'end' should fire.
+        }
+    });
+
     try {
         const handler = await getHandler(relPath);
-        if (!handler) { res.writeHead(404); res.end(JSON.stringify({ error: 'API route not found' })); return; }
+        if (!handler) {
+            console.warn(`[API Server] Route not found: /api/${relPath}`);
+            res.writeHead(404);
+            res.end(JSON.stringify({ error: 'API route not found' }));
+            return;
+        }
 
         const query = Object.fromEntries(url.searchParams);
-        const body = await new Promise(resolve => {
-            let d = '';
-            req.on('data', c => { d += c; });
-            req.on('end', () => { try { resolve(d ? JSON.parse(d) : {}); } catch { resolve({}); } });
-        });
-
         const apiReq = { method: req.method, query, body, headers: req.headers };
         let finished = false;
         const apiRes = {
@@ -66,20 +80,30 @@ const server = createServer(async (req, res) => {
             json(data) {
                 if (finished) return;
                 finished = true;
+                const s = JSON.stringify(data);
                 res.setHeader('Content-Type', 'application/json');
+                res.setHeader('Content-Length', Buffer.byteLength(s));
                 res.writeHead(this.statusCode);
-                res.end(JSON.stringify(data));
+                res.end(s);
+                console.log(`[API Server] <- ${req.method} /api/${relPath} (JSON)`);
             },
             end() {
                 if (finished) return;
                 finished = true;
+                res.setHeader('Content-Length', '0');
                 res.writeHead(this.statusCode);
                 res.end();
+                console.log(`[API Server] <- ${req.method} /api/${relPath} (END)`);
             }
         };
         await handler(apiReq, apiRes);
     } catch (err) {
         console.error(`[API Server] Error in /api/${relPath}:`, err.message);
+        try {
+            const fs = await import('node:fs');
+            fs.appendFileSync('api_error.log', `[${new Date().toISOString()}] /api/${relPath} ERROR: ${err.message}\n${err.stack}\n`);
+        } catch (e) { }
+
         if (!res.headersSent) {
             res.writeHead(500, { 'Content-Type': 'application/json' });
             res.end(JSON.stringify({ error: err.message }));
@@ -87,4 +111,4 @@ const server = createServer(async (req, res) => {
     }
 });
 
-server.listen(PORT, () => console.log(`[API Server] Running on http://localhost:${PORT}`));
+server.listen(PORT, '127.0.0.1', () => console.log(`[API Server] Running on http://127.0.0.1:${PORT}`));

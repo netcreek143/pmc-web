@@ -1,4 +1,3 @@
-import React from 'react';
 import { Truck, Send, Eye } from 'lucide-react';
 
 export default function AdminTransmit() {

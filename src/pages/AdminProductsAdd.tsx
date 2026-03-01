@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Box, Send, Ban, FileUp, Bold, Italic, Link, List, ListOrdered, Loader2, Upload } from 'lucide-react';
 import { fetcher } from '../lib/api';
+import { useNotificationStore } from '../lib/notificationStore';
 
 type Category = { id: number; name: string };
 
@@ -29,6 +30,7 @@ export default function AdminProductsAdd() {
     const [imageFile, setImageFile] = useState<File | null>(null);
     const [saving, setSaving] = useState(false);
     const [bulkUploading, setBulkUploading] = useState(false);
+    const showNotification = useNotificationStore(state => state.show);
 
     useEffect(() => {
         fetcher('/api/categories').then(setCategories).catch(console.error);
@@ -55,7 +57,7 @@ export default function AdminProductsAdd() {
 
     const handleSave = async () => {
         if (!form.name.trim()) {
-            alert('Product name is required.');
+            showNotification('Product name is required.', 'error');
             return;
         }
         setSaving(true);
@@ -91,11 +93,11 @@ export default function AdminProductsAdd() {
                 body: JSON.stringify(payload),
             });
 
-            alert('Product saved! It will appear in "Waiting for Verification".');
+            showNotification('Product saved! It will appear in "Waiting for Verification".', 'success');
             navigate('/admin/products');
         } catch (err: any) {
             console.error('Save error:', err);
-            alert('Failed to save product: ' + (err.message || 'Unknown error'));
+            showNotification('Failed to save product: ' + (err.message || 'Unknown error'), 'error');
         } finally {
             setSaving(false);
         }
@@ -133,11 +135,11 @@ export default function AdminProductsAdd() {
                 });
                 count++;
             }
-            alert(`${count} products uploaded! They are now waiting for verification.`);
+            showNotification(`${count} products uploaded! They are now waiting for verification.`, 'success');
             navigate('/admin/products');
         } catch (err: any) {
             console.error('Bulk upload error:', err);
-            alert('Bulk upload failed: ' + (err.message || 'Unknown error'));
+            showNotification('Bulk upload failed: ' + (err.message || 'Unknown error'), 'error');
         } finally {
             setBulkUploading(false);
             e.target.value = '';

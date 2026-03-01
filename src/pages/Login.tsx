@@ -19,8 +19,8 @@ export default function Login() {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ email, password }),
             });
-            setToken(data.token);
-            navigate('/account');
+            setToken(data.token, data.user);
+            navigate('/admin');
         } catch (err: any) {
             setError(err.message);
         }
@@ -36,8 +36,8 @@ export default function Login() {
                     value={email}
                     onChange={(event) => setEmail(event.target.value)}
                     className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm"
-                    placeholder="Email"
-                    type="email"
+                    placeholder="Email or Username"
+                    type="text"
                 />
                 <input
                     value={password}

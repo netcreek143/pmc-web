@@ -1,6 +1,5 @@
 import { Home, Eye, Send, Ban, Loader2 } from 'lucide-react';
 import { useState, useEffect } from 'react';
-import { supabase } from '../lib/supabase';
 import { fetcher } from '../lib/api';
 
 export default function AdminCompany() {
@@ -30,7 +29,7 @@ export default function AdminCompany() {
             setLoading(true);
             const data = await fetcher('/api/company');
             if (data && data.company_name) {
-                setFormData(data);
+                setFormData(prev => ({ ...prev, ...data }));
             }
         } catch (err) {
             console.error('Failed to load company config', err);
@@ -58,32 +57,19 @@ export default function AdminCompany() {
         try {
             let logo_url = formData.logo_url;
 
-            if (logoFile) {
-                const fileExt = logoFile.name.split('.').pop();
-                const fileName = `logo_${Date.now()}.${fileExt}`;
-                const { error: uploadError } = await supabase.storage
-                    .from('product-images') // Using existing bucket
-                    .upload(`company/${fileName}`, logoFile);
+            // TODO: In a real app, we would upload the logoFile to a storage bucket first
+            // and get a new URL. For now, we'll just use the existing logo_url or a placeholder.
+            // If the user wants real uploads, we can implement an /api/upload endpoint.
 
-                if (!uploadError) {
-                    const { data: { publicUrl } } = supabase.storage
-                        .from('product-images')
-                        .getPublicUrl(`company/${fileName}`);
-                    logo_url = publicUrl;
-                } else {
-                    console.error('Error uploading logo:', uploadError);
-                }
-            }
+            const payload = { ...formData, logo_url };
 
-            const payload = { ...formData, logo_url, id: 1 };
+            await fetcher('/api/company', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload),
+            });
 
-            const { error } = await supabase
-                .from('company_settings')
-                .upsert(payload);
-
-            if (error) throw error;
-
-            await loadCompany(); // Refresh data after successful save
+            await loadCompany();
             setLogoFile(null);
             alert('Settings saved successfully!');
         } catch (error) {

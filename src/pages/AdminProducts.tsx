@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { fetcher, formatCurrency } from '../lib/api';
 import LoadingState from '../components/LoadingState';
 import { Eye, Pencil, Trash2, CheckCircle, X, Package, Clock, Loader2 } from 'lucide-react';
+import { useNotificationStore } from '../lib/notificationStore';
 
 type Product = {
     id: number;
@@ -14,6 +15,7 @@ type Product = {
     category_id: number;
     status: string;
     description?: string;
+    custom_printing?: boolean;
 };
 
 export default function AdminProducts() {
@@ -29,6 +31,9 @@ export default function AdminProducts() {
 
     // Delete confirm
     const [deleteConfirm, setDeleteConfirm] = useState<Product | null>(null);
+    const [isDeleting, setIsDeleting] = useState(false);
+    const [deleteResult, setDeleteResult] = useState<'success' | 'error' | null>(null);
+    const showNotification = useNotificationStore(state => state.show);
 
     const fetchData = async () => {
         try {
@@ -51,7 +56,18 @@ export default function AdminProducts() {
 
     const openModal = (product: Product, mode: 'view' | 'edit' | 'verify') => {
         setSelectedProduct(product);
-        setEditForm({ ...product });
+
+        let desc = product.description || '';
+        let spec = '';
+        if (desc.includes('|||SPEC|||')) {
+            [desc, spec] = desc.split('|||SPEC|||');
+        }
+
+        setEditForm({
+            ...product,
+            _desc: desc,
+            _spec: spec
+        });
         setModalMode(mode);
     };
 
@@ -64,34 +80,41 @@ export default function AdminProducts() {
     const handleEditSave = async () => {
         setActionLoading(true);
         try {
-            const { id, ...updates } = editForm;
+            const { id, _desc, _spec, description, ...updates } = editForm;
+            const finalDescription = _spec ? `${_desc}|||SPEC|||${_spec}` : _desc;
+
             await fetcher('/api/products', {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ id, ...updates }),
+                body: JSON.stringify({ id, ...updates, description: finalDescription }),
             });
+            showNotification('Product updated successfully', 'success');
             closeModal();
             fetchData();
         } catch (err) {
             console.error(err);
-            alert('Failed to update product');
+            showNotification('Failed to update product', 'error');
         } finally {
             setActionLoading(false);
         }
     };
 
     const handleDelete = async (product: Product) => {
+        setIsDeleting(true);
+        setDeleteResult(null);
         try {
             await fetcher('/api/products', {
                 method: 'DELETE',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ id: product.id }),
             });
-            setDeleteConfirm(null);
+            setDeleteResult('success');
             fetchData();
         } catch (err) {
             console.error(err);
-            alert('Failed to delete product');
+            setDeleteResult('error');
+        } finally {
+            setIsDeleting(false);
         }
     };
 
@@ -104,11 +127,12 @@ export default function AdminProducts() {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ id: selectedProduct.id, status: 'published' }),
             });
+            showNotification('Product verified and published!', 'success');
             closeModal();
             fetchData();
         } catch (err) {
             console.error(err);
-            alert('Failed to verify product');
+            showNotification('Failed to verify product', 'error');
         } finally {
             setActionLoading(false);
         }
@@ -190,13 +214,50 @@ export default function AdminProducts() {
             {deleteConfirm && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4">
                     <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl text-center">
-                        <Trash2 size={32} className="mx-auto text-rose-500 mb-3" />
-                        <h3 className="text-lg font-semibold text-slate-900">Delete Product?</h3>
-                        <p className="text-sm text-slate-500 mt-2">Are you sure you want to delete <strong>{deleteConfirm.name}</strong>? This action cannot be undone.</p>
-                        <div className="flex gap-3 mt-5 justify-center">
-                            <button onClick={() => setDeleteConfirm(null)} className="rounded-lg border border-slate-200 px-4 py-2 text-sm text-slate-600 hover:bg-slate-50">Cancel</button>
-                            <button onClick={() => handleDelete(deleteConfirm)} className="rounded-lg bg-rose-600 px-4 py-2 text-sm text-white hover:bg-rose-700">Yes, Delete</button>
-                        </div>
+                        {deleteResult === 'success' ? (
+                            <>
+                                <CheckCircle size={40} className="mx-auto text-emerald-500 mb-3" />
+                                <h3 className="text-lg font-semibold text-slate-900">Success!</h3>
+                                <p className="text-sm text-slate-500 mt-2">Product <strong>{deleteConfirm.name}</strong> deleted successfully.</p>
+                                <button
+                                    onClick={() => {
+                                        setDeleteConfirm(null);
+                                        setDeleteResult(null);
+                                    }}
+                                    className="w-full mt-6 rounded-lg bg-slate-900 py-2.5 text-sm font-semibold text-white hover:bg-slate-800"
+                                >
+                                    OK
+                                </button>
+                            </>
+                        ) : deleteResult === 'error' ? (
+                            <>
+                                <X size={40} className="mx-auto text-rose-500 mb-3" />
+                                <h3 className="text-lg font-semibold text-slate-900">Error</h3>
+                                <p className="text-sm text-slate-500 mt-2">Failed to delete the product. Please try again.</p>
+                                <button
+                                    onClick={() => setDeleteResult(null)}
+                                    className="w-full mt-6 rounded-lg bg-slate-100 py-2.5 text-sm font-semibold text-slate-900 hover:bg-slate-200"
+                                >
+                                    Try Again
+                                </button>
+                            </>
+                        ) : isDeleting ? (
+                            <>
+                                <Loader2 size={40} className="mx-auto text-blue-500 mb-3 animate-spin" />
+                                <h3 className="text-lg font-semibold text-slate-900">Deleting...</h3>
+                                <p className="text-sm text-slate-500 mt-2">Please wait while we remove <strong>{deleteConfirm.name}</strong>.</p>
+                            </>
+                        ) : (
+                            <>
+                                <Trash2 size={32} className="mx-auto text-rose-500 mb-3" />
+                                <h3 className="text-lg font-semibold text-slate-900">Delete Product?</h3>
+                                <p className="text-sm text-slate-500 mt-2">Are you sure you want to delete <strong>{deleteConfirm.name}</strong>? This action cannot be undone.</p>
+                                <div className="flex gap-3 mt-5 justify-center">
+                                    <button onClick={() => setDeleteConfirm(null)} className="rounded-lg border border-slate-200 px-4 py-2 text-sm text-slate-600 hover:bg-slate-50">Cancel</button>
+                                    <button onClick={() => handleDelete(deleteConfirm)} className="rounded-lg bg-rose-600 px-4 py-2 text-sm text-white hover:bg-rose-700">Yes, Delete</button>
+                                </div>
+                            </>
+                        )}
                     </div>
                 </div>
             )}
@@ -354,7 +415,11 @@ export default function AdminProducts() {
                                             </div>
                                             <div>
                                                 <label className="text-[11px] font-semibold text-slate-700">Description</label>
-                                                <textarea value={editForm.description || ''} onChange={e => setEditForm({ ...editForm, description: e.target.value })} rows={4} className="w-full rounded border border-slate-200 px-3 py-2 text-sm mt-1 resize-none" />
+                                                <textarea value={editForm._desc || ''} onChange={e => setEditForm({ ...editForm, _desc: e.target.value })} rows={3} className="w-full rounded border border-slate-200 px-3 py-2 text-sm mt-1 resize-none" />
+                                            </div>
+                                            <div>
+                                                <label className="text-[11px] font-semibold text-slate-700">Specifications</label>
+                                                <textarea value={editForm._spec || ''} onChange={e => setEditForm({ ...editForm, _spec: e.target.value })} rows={3} className="w-full rounded border border-slate-200 px-3 py-2 text-sm mt-1 resize-none" placeholder="Enter specifications here..." />
                                             </div>
                                         </div>
                                     </div>

@@ -1,94 +1,128 @@
-import React from 'react';
-import { Monitor, Image as ImageIcon } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Calendar, Mail, CheckCircle, Loader2, Monitor } from 'lucide-react';
+import { fetcher } from '../lib/api';
+
+type Inquiry = {
+    id: number;
+    type: string;
+    status: string;
+    name: string;
+    email: string;
+    company?: string;
+    message: string;
+    created_at: string;
+};
 
 export default function AdminCustomize() {
+    const [inquiries, setInquiries] = useState<Inquiry[]>([]);
+    const [loading, setLoading] = useState(true);
+
+    const fetchData = async () => {
+        try {
+            setLoading(true);
+            const data = await fetcher('/api/inquiries');
+            setInquiries(data);
+        } catch (err) {
+            console.error(err);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        fetchData();
+    }, []);
+
+    const handleStatusUpdate = async (id: number, status: string) => {
+        try {
+            await fetcher('/api/inquiries', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id, status }),
+            });
+            fetchData();
+        } catch (err) {
+            alert('Failed to update status');
+        }
+    };
+
     return (
         <div className="space-y-6">
-            {/* Header */}
             <div className="flex items-center gap-2 text-sm text-slate-500">
-                <span className="text-blue-500 hover:underline cursor-pointer">Home</span>
-                <span>/</span>
-                <span className="text-blue-500 hover:underline cursor-pointer">Customize</span>
-                <span>/</span>
-                <span className="text-slate-700">View Customize</span>
+                <span className="text-[color:var(--brand)] font-medium">Home</span> /
+                <span className="text-slate-900">Customization Enquiries</span>
             </div>
 
-            {/* Main Card */}
-            <div className="rounded-lg bg-white shadow-sm border border-slate-100 overflow-hidden">
-                <div className="border-b border-slate-200 bg-[#ebe9e1] px-6 py-4 flex items-center gap-2">
+            <div className="rounded-lg bg-white shadow-sm border border-slate-200 overflow-hidden">
+                <div className="border-b border-slate-200 bg-[#eae6e1] px-6 py-4 flex items-center gap-2">
                     <Monitor size={20} className="text-slate-800" />
-                    <h2 className="text-lg font-bold text-slate-800">View Customize Enquiry</h2>
+                    <h2 className="text-lg font-bold text-slate-800">Customization Requests</h2>
                 </div>
 
-                <div className="p-4 space-y-4">
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                        <div className="flex items-center gap-2 text-sm text-slate-600">
-                            <span>Show</span>
-                            <select className="border border-slate-300 rounded px-2 py-1 focus:outline-none focus:border-brand">
-                                <option>10</option>
-                                <option>25</option>
-                                <option>50</option>
-                            </select>
-                            <span>entries</span>
+                <div className="p-0">
+                    {loading ? (
+                        <div className="flex justify-center py-20">
+                            <Loader2 size={24} className="animate-spin text-slate-300" />
                         </div>
-                        <div className="flex items-center gap-2 text-sm text-slate-600">
-                            <span>Search:</span>
-                            <input
-                                type="text"
-                                className="border border-slate-300 rounded px-3 py-1 focus:outline-none focus:border-brand"
-                            />
+                    ) : (
+                        <div className="divide-y divide-slate-100 overflow-x-auto">
+                            <table className="w-full text-xs text-left">
+                                <thead className="bg-slate-50 text-slate-700 uppercase font-semibold">
+                                    <tr>
+                                        <th className="px-6 py-3">Customer</th>
+                                        <th className="px-6 py-3">Contact</th>
+                                        <th className="px-6 py-3">Message</th>
+                                        <th className="px-6 py-3">Date</th>
+                                        <th className="px-6 py-3 text-right">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-slate-100 bg-white">
+                                    {inquiries.length === 0 ? (
+                                        <tr>
+                                            <td colSpan={5} className="px-6 py-12 text-center text-slate-400 font-medium">No enquiries yet</td>
+                                        </tr>
+                                    ) : (
+                                        inquiries.map((inq) => (
+                                            <tr key={inq.id} className="hover:bg-slate-50 transition-colors">
+                                                <td className="px-6 py-4 align-top">
+                                                    <div className="font-bold text-slate-900">{inq.name}</div>
+                                                    <div className="text-[10px] text-slate-500">{inq.company || 'Individual'}</div>
+                                                    <span className={`mt-2 inline-block px-2 py-0.5 rounded-full text-[9px] font-bold uppercase ${inq.status === 'new' ? 'bg-blue-100 text-blue-700' : 'bg-slate-100 text-slate-600'
+                                                        }`}>
+                                                        {inq.status}
+                                                    </span>
+                                                </td>
+                                                <td className="px-6 py-4 align-top space-y-1">
+                                                    <div className="flex items-center gap-1.5 text-slate-600">
+                                                        <Mail size={12} className="text-slate-400" /> {inq.email}
+                                                    </div>
+                                                </td>
+                                                <td className="px-6 py-4 align-top">
+                                                    <p className="max-w-xs text-slate-600 whitespace-pre-wrap">{inq.message}</p>
+                                                </td>
+                                                <td className="px-6 py-4 align-top text-slate-400">
+                                                    <div className="flex items-center gap-1">
+                                                        <Calendar size={12} /> {new Date(inq.created_at).toLocaleDateString()}
+                                                    </div>
+                                                </td>
+                                                <td className="px-6 py-4 align-top text-right">
+                                                    {inq.status === 'new' && (
+                                                        <button
+                                                            onClick={() => handleStatusUpdate(inq.id, 'read')}
+                                                            className="text-slate-400 hover:text-emerald-600 transition"
+                                                            title="Mark as Read"
+                                                        >
+                                                            <CheckCircle size={18} />
+                                                        </button>
+                                                    )}
+                                                </td>
+                                            </tr>
+                                        ))
+                                    )}
+                                </tbody>
+                            </table>
                         </div>
-                    </div>
-
-                    <div className="overflow-x-auto">
-                        <table className="w-full border-collapse border border-slate-200 text-sm whitespace-nowrap">
-                            <thead>
-                                <tr className="bg-[#4CAF50] text-white">
-                                    <th className="border border-slate-200 px-4 py-3 text-left font-bold cursor-pointer hover:bg-[#45a049]">S.No &#8597;</th>
-                                    <th className="border border-slate-200 px-4 py-3 text-left font-bold cursor-pointer hover:bg-[#45a049]">First Name &#8597;</th>
-                                    <th className="border border-slate-200 px-4 py-3 text-left font-bold cursor-pointer hover:bg-[#45a049]">Last Name &#8597;</th>
-                                    <th className="border border-slate-200 px-4 py-3 text-left font-bold cursor-pointer hover:bg-[#45a049]">Email &#8597;</th>
-                                    <th className="border border-slate-200 px-4 py-3 text-left font-bold cursor-pointer hover:bg-[#45a049]">Phone &#8597;</th>
-                                    <th className="border border-slate-200 px-4 py-3 text-left font-bold cursor-pointer hover:bg-[#45a049]">Company &#8597;</th>
-                                    <th className="border border-slate-200 px-4 py-3 text-left font-bold cursor-pointer hover:bg-[#45a049]">Website &#8597;</th>
-                                    <th className="border border-slate-200 px-4 py-3 text-left font-bold cursor-pointer hover:bg-[#45a049]">Packing Items &#8597;</th>
-                                    <th className="border border-slate-200 px-4 py-3 text-left font-bold cursor-pointer hover:bg-[#45a049]">Dimensions &#8597;</th>
-                                    <th className="border border-slate-200 px-4 py-3 text-left font-bold cursor-pointer hover:bg-[#45a049]">Box Type &#8597;</th>
-                                    <th className="border border-slate-200 px-4 py-3 text-left font-bold cursor-pointer hover:bg-[#45a049]">Box Content &#8597;</th>
-                                    <th className="border border-slate-200 px-4 py-3 text-left font-bold text-white">Image</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr className="hover:bg-slate-50">
-                                    <td className="border border-slate-200 px-4 py-3">1</td>
-                                    <td className="border border-slate-200 px-4 py-3">Ananda</td>
-                                    <td className="border border-slate-200 px-4 py-3">Kumaran</td>
-                                    <td className="border border-slate-200 px-4 py-3">anand02111998@gmail.com</td>
-                                    <td className="border border-slate-200 px-4 py-3">9894820383</td>
-                                    <td className="border border-slate-200 px-4 py-3">Sm infotech</td>
-                                    <td className="border border-slate-200 px-4 py-3 text-blue-500 hover:underline">https://sminfo.in/</td>
-                                    <td className="border border-slate-200 px-4 py-3">150</td>
-                                    <td className="border border-slate-200 px-4 py-3">10*50</td>
-                                    <td className="border border-slate-200 px-4 py-3">Cake Box</td>
-                                    <td className="border border-slate-200 px-4 py-3">Tell me anything</td>
-                                    <td className="border border-slate-200 px-4 py-3 p-1">
-                                        <div className="w-12 h-12 bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-400">
-                                            <ImageIcon size={20} />
-                                        </div>
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-
-                    <div className="flex items-center justify-between text-sm text-slate-600">
-                        <div>Showing 1 to 1 of 1 entries</div>
-                        <div className="flex items-center gap-1">
-                            <button className="px-3 py-1 rounded bg-slate-100 hover:bg-slate-200 cursor-not-allowed opacity-50">Previous</button>
-                            <button className="px-3 py-1 rounded bg-blue-500 text-white">1</button>
-                            <button className="px-3 py-1 rounded bg-slate-100 hover:bg-slate-200 cursor-not-allowed opacity-50">Next</button>
-                        </div>
-                    </div>
+                    )}
                 </div>
             </div>
         </div>

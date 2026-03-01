@@ -18,7 +18,13 @@ export type CartState = {
 
 export type AuthState = {
     token: string | null;
-    setToken: (token: string | null) => void;
+    user: {
+        id?: string;
+        email?: string;
+        role?: 'admin' | 'employee';
+        permissions?: string[];
+    } | null;
+    setToken: (token: string | null, user?: AuthState['user']) => void;
 };
 
 type SetState<T> = (partial: T | Partial<T> | ((state: T) => T | Partial<T>)) => void;
@@ -45,12 +51,15 @@ export const useCartStore = create<CartState>((set: SetState<CartState>) => ({
 
 export const useAuthStore = create<AuthState>((set: SetState<AuthState>) => ({
     token: typeof window === 'undefined' ? null : localStorage.getItem('pmc_token'),
-    setToken: (token: string | null) => {
+    user: typeof window === 'undefined' ? null : JSON.parse(localStorage.getItem('pmc_user') || 'null'),
+    setToken: (token, user = null) => {
         if (token) {
             localStorage.setItem('pmc_token', token);
+            localStorage.setItem('pmc_user', JSON.stringify(user));
         } else {
             localStorage.removeItem('pmc_token');
+            localStorage.removeItem('pmc_user');
         }
-        set({ token });
+        set({ token, user });
     },
 }));

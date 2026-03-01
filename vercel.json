@@ -1,8 +1,12 @@
 {
-    "env": {
-        "NEXT_PUBLIC_SUPABASE_URL": "https://otgopumbastbjnkhikjd.supabase.co",
-        "NEXT_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im90Z29wdW1iYXN0Ympua2hpa2pkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA2Njg0OTEsImV4cCI6MjA4NjI0NDQ5MX0.r5caijAVxQ_2_k_zrcIB-LoW6b1joQn0YKu8BsTxJwY",
-        "SUPABASE_SERVICE_ROLE_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im90Z29wdW1iYXN0Ympua2hpa2pkIiwicm9sZSI6ImFwcF9mc19hMGM3NDQ3OC0yN2UwLTQ5YTctODBlNi1hZjcwMWI1NDJhMDVfYWdlbnRfMSIsImlhdCI6MTc3MjAwMzcyOCwiZXhwIjoyMDg3MzYzNzI4fQ.GXOionXCruR6HLffDu6B2Fb5uqsIiFdzaUqVZViEJXM",
-        "SUPABASE_DB_SCHEMA": "fs_a0c74478-27e0-49a7-80e6-af701b542a05_agent_1"
-    }
+    "rewrites": [
+        {
+            "source": "/api/(.*)",
+            "destination": "/api/$1"
+        },
+        {
+            "source": "/(.*)",
+            "destination": "/index.html"
+        }
+    ]
 }

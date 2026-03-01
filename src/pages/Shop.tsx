@@ -23,7 +23,7 @@ export default function Shop() {
     const [searchParams] = useSearchParams();
     const querySearch = searchParams.get('search') || '';
     const [search, setSearch] = useState(querySearch);
-    const [priceRange, setPriceRange] = useState([0, 250]);
+    const [priceRange, setPriceRange] = useState([0, 1000]);
     const [loading, setLoading] = useState(true);
 
     const fetchData = async () => {
@@ -101,7 +101,7 @@ export default function Shop() {
                         <input
                             type="range"
                             min={0}
-                            max={250}
+                            max={1000}
                             value={priceRange[1]}
                             onChange={(event) => setPriceRange([0, Number(event.target.value)])}
                             className="mt-2 w-full"

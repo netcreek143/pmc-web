@@ -118,7 +118,7 @@ export default function ProductDetail() {
                     <div>
                         <p className="text-xs uppercase tracking-[0.3em] text-slate-400">{product.custom_printing ? 'Custom printing' : 'Ready stock'}</p>
                         <h1 className="mt-2 text-3xl font-semibold text-slate-900">{product.name}</h1>
-                        <p className="mt-3 text-sm text-slate-600 whitespace-pre-line">{desc}</p>
+                        <p className="mt-3 text-sm text-slate-600 whitespace-pre-wrap">{desc}</p>
                     </div>
                     <div className="rounded-2xl border border-slate-200 bg-white p-6">
                         <div className="flex items-center justify-between">
@@ -183,7 +183,7 @@ export default function ProductDetail() {
                     <h2 className="text-lg font-semibold text-slate-900">Specifications</h2>
                     <div className="mt-4 grid gap-2 text-sm text-slate-600">
                         {spec ? (
-                            <p className="whitespace-pre-line">{spec}</p>
+                            <p className="whitespace-pre-wrap">{spec}</p>
                         ) : (
                             <>
                                 <p>MOQ: 10 units</p>

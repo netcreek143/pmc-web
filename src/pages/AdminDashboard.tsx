@@ -30,7 +30,7 @@ export default function AdminDashboard() {
             setCustomers(customerData);
             setStats(statsData);
         } catch (err) {
-            console.error('Fetch error:', err);
+            console.error('[Dashboard] Fetch error:', err);
         } finally {
             setLoading(false);
         }
@@ -49,10 +49,10 @@ export default function AdminDashboard() {
                 <h1 className="mt-2 text-3xl font-semibold text-slate-900">Dashboard Overview</h1>
             </header>
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-                <StatsCard label="Total revenue" value={formatCurrency(stats.totalRevenue)} icon={<TrendingUp size={20} />} />
-                <StatsCard label="Orders today" value={`${stats.ordersToday}`} icon={<ShoppingCart size={20} />} />
-                <StatsCard label="Active products" value={`${stats.productCount}`} icon={<Package size={20} />} />
-                <StatsCard label="Low stock alerts" value={`${stats.lowStock}`} icon={<AlertTriangle size={20} />} />
+                <StatsCard label="Total revenue" value={formatCurrency(stats?.totalRevenue || 0)} icon={<TrendingUp size={20} />} />
+                <StatsCard label="Orders today" value={`${stats?.ordersToday || 0}`} icon={<ShoppingCart size={20} />} />
+                <StatsCard label="Active products" value={`${stats?.productCount || 0}`} icon={<Package size={20} />} />
+                <StatsCard label="Low stock alerts" value={`${stats?.lowStock || 0}`} icon={<AlertTriangle size={20} />} />
             </div>
             <div className="grid gap-6 lg:grid-cols-2">
                 <div className="rounded-3xl border border-slate-200 bg-white p-6">
@@ -78,7 +78,7 @@ export default function AdminDashboard() {
                                     <p className="font-semibold text-slate-900">{customer.name}</p>
                                     <p className="text-xs text-slate-500">Total spend</p>
                                 </div>
-                                <span className="text-sm font-semibold">{formatCurrency(Number(customer.total_spend))}</span>
+                                <span className="text-sm font-semibold">{formatCurrency(Number(customer.total_spend || 0))}</span>
                             </div>
                         ))}
                     </div>

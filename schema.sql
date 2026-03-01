@@ -11,6 +11,7 @@ create table if not exists categories (
   name        text not null,
   description text,
   image_url   text,
+  status      text default 'active',
   created_at  timestamptz default now()
 );
 
@@ -228,6 +229,27 @@ create table if not exists company_settings (
   constraint single_row check (id = 1)
 );
 
+-- 20. EMPLOYEES
+create table if not exists employees (
+  id            serial primary key,
+  employee_id   text unique,
+  name          text not null,
+  father_name   text,
+  address       text,
+  qualification text,
+  email         text unique,
+  gender        text,
+  dob           date,
+  mobile        text,
+  designation   text,
+  join_date     date default current_date,
+  username      text unique,
+  password_hash text,
+  permissions   jsonb default '[]'::jsonb,
+  status        text default 'active',
+  created_at    timestamptz default now()
+);
+
 -- ============================================================
 -- SEED DATA — starter content so the homepage isn't blank
 -- ============================================================
@@ -284,7 +306,8 @@ on conflict do nothing;
 
 -- Demo auth user (password = password123, hashed for PBKDF2)
 insert into auth_users (email, password_hash, role) values
-  ('demo@packmycake.in', '5b9af3b5cf3807626a62ad13a5f606d7:a382b60a16f8325f87570f19fb1f80a026da2cfd135358ad243349aae9ff47fae3dba0a13c0e7397a1f7ac8d129340c1efc785ab53c65fb7f2236eeedb7919e8', 'admin')
+  ('demo@packmycake.in', '5b9af3b5cf3807626a62ad13a5f606d7:a382b60a16f8325f87570f19fb1f80a026da2cfd135358ad243349aae9ff47fae3dba0a13c0e7397a1f7ac8d129340c1efc785ab53c65fb7f2236eeedb7919e8', 'admin'),
+  ('admin@packmycake.com', '5c0d3c030b91af8ed88c6210f1856cc7:ac577e67ee49704d44cf914fbc302cb362741d7936e1fedc27dcb1af6591ceb140e8f6ceebf600d2f398787d957090d84f7e18a6ab96ddceedc39885c4f2924c', 'admin')
 on conflict (email) do nothing;
 
 -- Default Company Settings
@@ -309,3 +332,4 @@ alter table inquiries      disable row level security;
 alter table auth_users     disable row level security;
 alter table auth_sessions  disable row level security;
 alter table company_settings disable row level security;
+alter table employees      disable row level security;
