@@ -1,4 +1,4 @@
-import supabase from './_supabase.js';
+import supabase from '../_supabase.js';
 
 function getSessionId(req) {
   return req.headers['x-session-id'] || req.query.session_id || 'guest-001';

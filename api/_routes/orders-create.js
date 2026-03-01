@@ -1,4 +1,4 @@
-import supabase from './_supabase.js';
+import supabase from '../_supabase.js';
 
 function calculateTotals(items, coupon) {
     const subtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0);

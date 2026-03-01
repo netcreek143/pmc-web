@@ -1,5 +1,5 @@
 import crypto from 'crypto';
-import supabase from './_supabase.js';
+import supabase from '../_supabase.js';
 
 function hashPassword(password) {
     const salt = crypto.randomBytes(32);

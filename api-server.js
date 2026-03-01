@@ -29,7 +29,10 @@ if (existsSync(envPath)) {
 
 // Dynamically import with cache-busting timestamp
 async function getHandler(relPath) {
-    const filePath = join(__dirname, 'api', relPath + '.js');
+    let filePath = join(__dirname, 'api', '_routes', relPath + '.js');
+    if (!existsSync(filePath)) {
+        filePath = join(__dirname, 'api', '_routes', relPath, 'index.js');
+    }
     if (!existsSync(filePath)) return null;
     const fileUrl = pathToFileURL(filePath).href + '?t=' + Date.now();
     const mod = await import(fileUrl);

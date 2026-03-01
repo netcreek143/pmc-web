@@ -1,4 +1,4 @@
-import supabase from './_supabase.js';
+import supabase from '../_supabase.js';
 
 export default async function handler(req, res) {
     res.setHeader('Access-Control-Allow-Origin', '*');
@@ -8,7 +8,10 @@ export default async function handler(req, res) {
 
     try {
         if (req.method === 'GET') {
-            const { data, error } = await supabase.from('blog_posts').select('*').order('published_at', { ascending: false });
+            const { product_id } = req.query;
+            let query = supabase.from('bulk_pricing').select('*').order('min_qty', { ascending: true });
+            if (product_id) query = query.eq('product_id', Number(product_id));
+            const { data, error } = await query;
             if (error) throw error;
             return res.status(200).json(data);
         }

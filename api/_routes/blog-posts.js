@@ -1,4 +1,4 @@
-import supabase from './_supabase.js';
+import supabase from '../_supabase.js';
 
 export default async function handler(req, res) {
     res.setHeader('Access-Control-Allow-Origin', '*');
@@ -8,13 +8,7 @@ export default async function handler(req, res) {
 
     try {
         if (req.method === 'GET') {
-            const { data, error } = await supabase.from('cms_content').select('*').order('id', { ascending: true });
-            if (error) throw error;
-            return res.status(200).json(data);
-        }
-        if (req.method === 'PUT') {
-            const { id, ...updates } = req.body;
-            const { data, error } = await supabase.from('cms_content').update(updates).eq('id', id).select().single();
+            const { data, error } = await supabase.from('blog_posts').select('*').order('published_at', { ascending: false });
             if (error) throw error;
             return res.status(200).json(data);
         }

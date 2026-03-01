@@ -1,4 +1,4 @@
-import supabase from './_supabase.js';
+import supabase from '../_supabase.js';
 
 export default async function handler(req, res) {
     res.setHeader('Access-Control-Allow-Origin', '*');
@@ -8,19 +8,22 @@ export default async function handler(req, res) {
 
     try {
         if (req.method === 'GET') {
-            const { data, error } = await supabase.from('customers').select('*').order('total_spend', { ascending: false });
+            const { product_id } = req.query;
+            let query = supabase.from('reviews').select('*').order('created_at', { ascending: false });
+            if (product_id) query = query.eq('product_id', Number(product_id)).eq('status', 'approved');
+            const { data, error } = await query;
             if (error) throw error;
             return res.status(200).json(data);
         }
         if (req.method === 'POST') {
-            const payload = req.body;
-            const { data, error } = await supabase.from('customers').insert(payload).select().single();
+            const payload = { ...req.body, status: 'pending' };
+            const { data, error } = await supabase.from('reviews').insert(payload).select().single();
             if (error) throw error;
             return res.status(201).json(data);
         }
         if (req.method === 'PUT') {
             const { id, ...updates } = req.body;
-            const { data, error } = await supabase.from('customers').update(updates).eq('id', id).select().single();
+            const { data, error } = await supabase.from('reviews').update(updates).eq('id', id).select().single();
             if (error) throw error;
             return res.status(200).json(data);
         }

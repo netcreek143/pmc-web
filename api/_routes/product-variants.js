@@ -1,4 +1,4 @@
-import supabase from './_supabase.js';
+import supabase from '../_supabase.js';
 
 export default async function handler(req, res) {
     res.setHeader('Access-Control-Allow-Origin', '*');
@@ -8,21 +8,30 @@ export default async function handler(req, res) {
 
     try {
         if (req.method === 'GET') {
-            const { data, error } = await supabase.from('orders').select('*').order('created_at', { ascending: false });
+            const { product_id } = req.query;
+            let query = supabase.from('product_variants').select('*').order('id', { ascending: true });
+            if (product_id) query = query.eq('product_id', Number(product_id));
+            const { data, error } = await query;
             if (error) throw error;
             return res.status(200).json(data);
         }
         if (req.method === 'POST') {
             const payload = req.body;
-            const { data, error } = await supabase.from('orders').insert(payload).select().single();
+            const { data, error } = await supabase.from('product_variants').insert(payload).select().single();
             if (error) throw error;
             return res.status(201).json(data);
         }
         if (req.method === 'PUT') {
             const { id, ...updates } = req.body;
-            const { data, error } = await supabase.from('orders').update(updates).eq('id', id).select().single();
+            const { data, error } = await supabase.from('product_variants').update(updates).eq('id', id).select().single();
             if (error) throw error;
             return res.status(200).json(data);
+        }
+        if (req.method === 'DELETE') {
+            const { id } = req.body;
+            const { error } = await supabase.from('product_variants').delete().eq('id', id);
+            if (error) throw error;
+            return res.status(200).json({ ok: true });
         }
         res.status(405).json({ error: 'Method not allowed' });
     } catch (err) {
