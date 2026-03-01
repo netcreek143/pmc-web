@@ -1,5 +1,5 @@
 import crypto from 'crypto';
-import supabase from '../_supabase.js';
+import supabase from '../../_supabase.js';
 
 function verifyPassword(password, storedHash) {
     const [saltHex, keyHex] = storedHash.split(':');
